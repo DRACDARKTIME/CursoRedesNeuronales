@@ -79,16 +79,22 @@ class Network(object):
         gradient descent using backpropagation to a single mini batch.
         The ``mini_batch`` is a list of tuples ``(x, y)``, and ``eta``
         is the learning rate."""
-        nabla_b = [np.zeros(b.shape) for b in self.biases]
+        nabla_b = [np.zeros(b.shape) for b in self.biases]  
         nabla_w = [np.zeros(w.shape) for w in self.weights]
         for x, y in mini_batch:
-            delta_nabla_b, delta_nabla_w = self.backprop(x, y)              # TODO (Tarea):Documentar este bloque de lineas de codigo
-            nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]   # Es decir, explicar lo que hace cada linea.
-            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]   #
-        self.weights = [w-(eta/len(mini_batch))*nw                          #
-                        for w, nw in zip(self.weights, nabla_w)]            #
-        self.biases = [b-(eta/len(mini_batch))*nb                           #
-                       for b, nb in zip(self.biases, nabla_b)]              #
+            delta_nabla_b, delta_nabla_w = self.backprop(x, y)              # Calculamos el gradiente de la funcion de perdida 
+                                                                            # para una sola muestra (x,y)
+                                                                            # respecto de los parametros w y b.
+            nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]   # Vamos sumando el gradiente en la componente b de 
+                                                                            # todas las muestras del minibatch 
+            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]   # Lo mismo que arriba pero para la componente w.
+
+        self.weights = [w-(eta/len(mini_batch))*nw                          # Actualizamos los pesos haciendo que vayan en
+                        for w, nw in zip(self.weights, nabla_w)]            # direccion contraria al gradiente con el paso                                                                  
+                                                                            # eta por el promedio de la suma de los gradientes. 
+
+        self.biases = [b-(eta/len(mini_batch))*nb                           # Lo mismo pero para los biases
+                       for b, nb in zip(self.biases, nabla_b)]              # Estamos aplicando mini batch stocastic gradient descent
 
     def backprop(self, x, y):
         """Return a tuple ``(nabla_b, nabla_w)`` representing the
@@ -103,6 +109,11 @@ class Network(object):
         zs = [] # list to store all the z vectors, layer by layer
         for b, w in zip(self.biases, self.weights):
             z = np.dot(w, activation)+b             #TODO: indicar las dimensiones de z, w, activation y b
+                                                    # sea n_l el numero de nueronas en la capa l
+                                                    # dim(b^l) = (n_l, 1)
+                                                    # dim(w^l) = (n_l, n_{l-1})
+                                                    # dim(activation^l) = (n_{l-1}, 1)
+                                                    # dim(z^l) = (n_l, 1)
             zs.append(z)
             activation = sigmoid(z)
             activations.append(activation)
@@ -110,7 +121,17 @@ class Network(object):
         delta = self.cost_derivative(activations[-1], y) * \
             sigmoid_prime(zs[-1])
         nabla_b[-1] = delta                         #TODO: indicar la dimension de delta
-        nabla_w[-1] = np.dot(delta, activations[-2].transpose())        #TODO: indicar la dimension de nabla_w
+                                                    # Sea L la ultima capa
+                                                    # dim(cons_derivate) = dim(z^L) = (n_L, 1)
+                                                    # dim(sigmoid_prime(z^L)) = dim(z^L) = (n_L, 1)
+                                                    # dim(delta^L) = dim(z^L) = (n_L, 1)
+                                                    # En todas las operaciones se hace el producto Hadamard
+                                                    # la cual conserva las dimensiones de las matrices.
+
+        nabla_w[-1] = np.dot(delta, activations[-2].transpose())        #TODO: indicar la dimension de nabla_w\
+                                                                        # dim(activation^{L-1}) = (n_{L-1}, 1)
+                                                                        # dim(nabla_w^{L}) = (n_L,1)x(n_{L-1},1)^T
+                                                                        # dim(nabla_w^{L}) = (n_L, n_{L-1})
         # Note that the variable l in the loop below is used a little
         # differently to the notation in Chapter 2 of the book.  Here,
         # l = 1 means the last layer of neurons, l = 2 is the
@@ -120,7 +141,14 @@ class Network(object):
         for l in range(2, self.num_layers):
             z = zs[-l]
             sp = sigmoid_prime(z)
-            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp  #TODO: indicar la dimension de delta, self.weights[-l+1].transponse y sp
+            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp  #TODO: indicar la dimension de delta,
+                                                                        # self.weights[-l+1].transponse y sp
+                                                                        # Aqui usamos l del ciclo for, l=2,3,...
+                                                                        # dim(sp) = dim(z^{L-l+2}) = (n_{L-l+2}, 1) 
+                                                                        # dim(w^{L-l+2}^T) = (n_{L-l+2}, n_{L-l+2-1} )^T 
+                                                                        # dim(w^{L-l+2}^T) = (n_{L-l+1}, n_{L-l+2} ) 
+                                                                        # dim(delta^{L-l+1}) = (n_{L-l+1}, n_{L-l+2}) x (n_{L-l+2}, 1)
+                                                                        # dim(delta^{L-l+1}) = (n_{L-l+1}, 1)
             nabla_b[-l] = delta
             nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
         return (nabla_b, nabla_w)
