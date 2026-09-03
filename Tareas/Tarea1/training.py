@@ -20,7 +20,10 @@ if __name__=="__main__":
     x_test = x_test.reshape(x_test.shape[0],784, 1)
 
     Red = Network(sizes=[784,240,120,10])
-    Red.SGD(training_data=list(zip(x_train, y_train_one_hot)),
+    #Red.SGD(training_data=list(zip(x_train, y_train_one_hot)),
+    # epochs=30, mini_batch_size=120,eta=0.01,
+    # test_data=list(zip(x_test, y_test_one_hot)))
+    Red.Adam(training_data=list(zip(x_train, y_train_one_hot)),
      epochs=30, mini_batch_size=120,eta=0.01,
      test_data=list(zip(x_test, y_test_one_hot)))
     
