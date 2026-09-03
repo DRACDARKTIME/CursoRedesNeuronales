@@ -35,7 +35,8 @@ class Network(object):
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
-        self.weights = [np.random.randn(y, x)
+        #To improve the weights we need to choose std = 1/sqrt{n_{l-1}} were n_{l-1} is the number of neurons in the layer l-1.
+        self.weights = [np.random.randn(y, x)*(1/np.sqrt(x))
                         for x, y in zip(sizes[:-1], sizes[1:])]
 
     def feedforward(self, a):
