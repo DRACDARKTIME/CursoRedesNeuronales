@@ -13,6 +13,8 @@ if __name__=="__main__":
     # but in the funtion evaluate y_test needs to be a constant
     y_train_one_hot = np.eye(num_classes, dtype=np.float32)[y_train]
     y_train_one_hot = y_train_one_hot.reshape(y_train_one_hot.shape[0],10,1)
+    y_test_one_hot = np.eye(num_classes, dtype=np.float32)[y_test]
+    y_test_one_hot = y_test_one_hot.reshape(y_test_one_hot.shape[0],10,1)
 
     x_train = x_train.reshape(x_train.shape[0],784, 1)
     x_test = x_test.reshape(x_test.shape[0],784, 1)
@@ -20,5 +22,5 @@ if __name__=="__main__":
     Red = Network(sizes=[784,240,120,10])
     Red.SGD(training_data=list(zip(x_train, y_train_one_hot)),
      epochs=30, mini_batch_size=120,eta=0.01,
-     test_data=list(zip(x_test, y_test)))
+     test_data=list(zip(x_test, y_test_one_hot)))
     

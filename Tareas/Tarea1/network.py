@@ -39,9 +39,14 @@ class Network(object):
                         for x, y in zip(sizes[:-1], sizes[1:])]
 
     def feedforward(self, a):
-        """Return the output of the network if ``a`` is input."""
-        for b, w in zip(self.biases, self.weights):
-            a = sigmoid(np.dot(w, a)+b)
+        """Return the output of the network if ``a`` is input.
+        For cross-entropy in the last layer we need softmax and not sigmoid"""
+        for i, (b, w) in enumerate(zip(self.biases, self.weights)):
+            z = np.dot(w, a) + b
+            if i ==len(self.weights) -1:
+                a = softmax(z)
+            else:
+                a = sigmoid(z)
         return a
 
     def SGD(self, training_data, epochs, mini_batch_size, eta,
@@ -107,19 +112,23 @@ class Network(object):
         activation = x
         activations = [x] # list to store all the activations, layer by layer
         zs = [] # list to store all the z vectors, layer by layer
-        for b, w in zip(self.biases, self.weights):
-            z = np.dot(w, activation)+b             #TODO: indicar las dimensiones de z, w, activation y b
+        for i, (b, w) in enumerate(zip(self.biases, self.weights)):
+            z = np.dot(w, activation) + b
+            zs.append(z)
+            if i < len(self.weights) - 1:
+                activation = sigmoid(z)
+            else: # we just changed the last activation in the last layer, we need to use softmax
+                activation = softmax(z)
+
+            activations.append(activation)
+                                                    #TODO: indicar las dimensiones de z, w, activation y b
                                                     # sea n_l el numero de nueronas en la capa l
                                                     # dim(b^l) = (n_l, 1)
                                                     # dim(w^l) = (n_l, n_{l-1})
                                                     # dim(activation^l) = (n_{l-1}, 1)
                                                     # dim(z^l) = (n_l, 1)
-            zs.append(z)
-            activation = sigmoid(z)
-            activations.append(activation)
         # backward pass
-        delta = self.cost_derivative(activations[-1], y) * \
-            sigmoid_prime(zs[-1])
+        delta = self.cost_derivative(activations[-1], y) # (a - y) for cross entropy
         nabla_b[-1] = delta                         #TODO: indicar la dimension de delta
                                                     # Sea L la ultima capa
                                                     # dim(cons_derivate) = dim(z^L) = (n_L, 1)
@@ -140,8 +149,8 @@ class Network(object):
         # that Python can use negative indices in lists.
         for l in range(2, self.num_layers):
             z = zs[-l]
-            sp = sigmoid_prime(z)
-            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp  #TODO: indicar la dimension de delta,
+            sp = sigmoid_prime(z) 
+            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp      #TODO: indicar la dimension de delta,
                                                                         # self.weights[-l+1].transponse y sp
                                                                         # Aqui usamos l del ciclo for, l=2,3,...
                                                                         # dim(sp) = dim(z^{L-l+2}) = (n_{L-l+2}, 1) 
@@ -158,7 +167,7 @@ class Network(object):
         network outputs the correct result. Note that the neural
         network's output is assumed to be the index of whichever
         neuron in the final layer has the highest activation."""
-        test_results = [(np.argmax(self.feedforward(x)), y)
+        test_results = [(np.argmax(self.feedforward(x)), np.argmax(y))
                         for (x, y) in test_data]
         return sum(int(x == y) for (x, y) in test_results)
 
@@ -175,3 +184,14 @@ def sigmoid(z):
 def sigmoid_prime(z):
     """Derivative of the sigmoid function."""
     return sigmoid(z)*(1-sigmoid(z))
+
+def softmax(z): # we need to add softmax for cross-entropy
+    """
+    Numerically stable Softmax.
+    softmax(z_i) =
+        exp(z_i - max(z)) / 
+        sum_j exp(z_j - max(z))
+    """
+    z_shifted = z - np.max(z)
+    exp_z = np.exp(z_shifted)
+    return exp_z / np.sum(exp_z)
