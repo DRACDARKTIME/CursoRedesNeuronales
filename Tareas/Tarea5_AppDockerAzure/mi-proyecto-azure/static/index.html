@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Predictor de Compra de Vivienda</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --surface: rgba(20, 27, 45, 0.78);
+      --border: rgba(148, 163, 184, 0.14);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #6366f1;
+      --success: #22c55e;
+      --warn: #f59e0b;
+    }
+
+    * { box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.12), transparent 35%),
+        radial-gradient(circle at 85% 80%, rgba(99, 102, 241, 0.12), transparent 35%),
+        var(--bg);
+      color: var(--text);
+      padding: 2rem 1.5rem;
+    }
+
+    .wrapper {
+      max-width: 1220px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 1.75rem;
+    }
+
+    header h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #f8fafc, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.75fr) 360px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--surface);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    .section-card {
+      margin-bottom: 1.5rem;
+    }
+
+    .section-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0 0 1.25rem;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+    }
+
+    .fields-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem 1.5rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+      height: 6px;
+    }
+
+    input[type="number"] {
+      width: 108px;
+      padding: 0.5rem 0.65rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(9, 13, 22, 0.8);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: right;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+    }
+
+    /* Panel derecho fijo */
+    .result-panel {
+      position: sticky;
+      top: 2rem;
+      text-align: center;
+    }
+
+    .gauge-wrap {
+      position: relative;
+      width: 190px;
+      height: 190px;
+      margin: 1rem auto 1.25rem;
+    }
+
+    .gauge-wrap svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: rgba(148, 163, 184, 0.15);
+      stroke-width: 12;
+    }
+
+    .gauge-progress {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-dasharray: 471;
+      stroke-dashoffset: 471;
+      transition: stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1), stroke 0.4s ease;
+    }
+
+    .gauge-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .prob-value {
+      font-size: 2.15rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .prob-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(148, 163, 184, 0.12);
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.95rem;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.98rem;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(56, 189, 248, 0.25);
+      transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 26px rgba(56, 189, 248, 0.35);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .result-panel { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <h1>Predictor de Compra de Vivienda</h1>
+      <p>Ajusta los parámetros con las barras deslizables o ingresa los valores manualmente.</p>
+    </header>
+
+    <form id="predictForm" class="layout">
+      <!-- Columna izquierda: Formularios -->
+      <div>
+        <div class="card section-card">
+          <h2 class="section-title">Datos del Cliente y Financiamiento</h2>
+          <div class="fields-grid">
+            <div class="field">
+              <label>Satisfacción del cliente (1 - 10)</label>
+              <div class="control-row">
+                <input type="range" min="1" max="10" step="1" value="8" data-sync="satisfaction_score">
+                <input type="number" id="satisfaction_score" min="1" max="10" step="1" value="8" required>
+              </div>
+            </div>
+            <div class="field">
+              <label>Salario mensual ($)</label>
+              <div class="control-row">
+                <input type="range" min="1000" max="200000" step="500" value="50000" data-sync="customer_salary">
+                <input type="number" id="customer_salary" min="0" step="any" value="50000" required>
+              </div>
+            </div>
+            <div class="field">
+              <label>Enganche / Pago inicial ($)</label>
+              <div class="control-row">
+                <input type="range" min="0" max="500000" step="1000" value="50000" data-sync="down_payment">
+                <input type="number" id="down_payment" min="0" step="any" value="50000" required>
+              </div>
+            </div>
+            <div class="field">
+              <label>Monto del préstamo ($)</label>
+              <div class="control-row">
+                <input type="range" min="0" max="2000000" step="5000" value="200000" data-sync="loan_amount">
+                <input type="number" id="loan_amount" min="0" step="any" value="200000" required>
+              </div>
+            </div>
+            <div class="field">
+              <label>Plazo del préstamo (años)</label>
+              <div class="control-row">
+                <input type="range" min="1" max="40" step="1" value="15" data-sync="loan_tenure_years">
+                <input type="number" id="loan_tenure_years" min="1" max="40" step="1" value="15" required>
+              </div>
+            </div>
+            <div class="field">
+              <label>Relación cuota/ingreso (EMI/Income)</label>
+              <div class="control-row">
+                <input type="range" min="0" max="2" step="0.01" value="0.30" data-sync="emi_to_income_ratio">
+                <input type="number" id="emi_to_income_ratio" min="0" step="0.01" value="0.30" required>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="section-title">Datos de la Casa y Entorno</h2>
+          <div class="fields-grid">
+            <div class="field">
+              <label>Precio de la casa ($)</label>
+              <div class="control-row">
+                <input type="range" min="50000" max="2500000" step="5000" value="250000" data-sync="price">
+                <input type="number" id="price" min="0" step="any" value="250000" required>
+              </div>
+            </div>
+            <div class="field">
+              <label>Tamaño de la propiedad (sqft)</label>
+              <div class="control-row">
+                <input type="range" min="300" max="10000" step="50" value="1500" data-sync="property_size_sqft">
+                <input type="number" id="property_size_sqft" min="100" step="any" value="1500" required>
+              </div>
+            </div>
+            <div class="field">
+              <label>Casos de criminalidad en zona</label>
+              <div class="control-row">
+                <input type="range" min="0" max="20" step="1" value="0" data-sync="crime_cases_reported">
+                <input type="number" id="crime_cases_reported" min="0" step="1" value="0" required>
+              </div>
+            </div>
+            <div class="field">
+              <label>Casos legales sobre la propiedad</label>
+              <div class="control-row">
+                <input type="range" min="0" max="10" step="1" value="0" data-sync="legal_cases_on_property">
+                <input type="number" id="legal_cases_on_property" min="0" step="1" value="0" required>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna derecha: Predicción y botón -->
+      <aside class="card result-panel">
+        <h2 class="section-title" style="justify-content: center;">Resultado de Predicción</h2>
+
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 170 170">
+            <circle class="gauge-bg" cx="85" cy="85" r="75"></circle>
+            <circle id="gaugeRing" class="gauge-progress" cx="85" cy="85" r="75"></circle>
+          </svg>
+          <div class="gauge-center">
+            <div id="probText" class="prob-value">--%</div>
+            <div class="prob-label">Probabilidad</div>
+          </div>
+        </div>
+
+        <div id="verdictBadge" class="badge">Esperando cálculo</div>
+
+        <button type="submit" id="submitBtn">Calcular Probabilidad</button>
+      </aside>
+    </form>
+  </div>
+
+  <script>
+    const CIRCUMFERENCE = 2 * Math.PI * 75; // ~471.24
+
+    document.querySelectorAll('input[type="range"]').forEach(slider => {
+      const numInput = document.getElementById(slider.dataset.sync);
+      slider.addEventListener("input", () => numInput.value = slider.value);
+      numInput.addEventListener("input", () => slider.value = numInput.value);
+    });
+
+    document.getElementById("predictForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("submitBtn");
+      btn.disabled = true;
+      btn.textContent = "Calculando...";
+
+      const fields = [
+        "satisfaction_score", "customer_salary", "loan_tenure_years",
+        "legal_cases_on_property", "crime_cases_reported", "emi_to_income_ratio",
+        "property_size_sqft", "loan_amount", "price", "down_payment"
+      ];
+      const payload = {};
+      fields.forEach(f => payload[f] = parseFloat(document.getElementById(f).value));
+
+      try {
+        const res = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const prob = Math.min(Math.max(data.probability, 0), 1);
+        const pct = (prob * 100).toFixed(2);
+
+        const ring = document.getElementById("gaugeRing");
+        const badge = document.getElementById("verdictBadge");
+
+        document.getElementById("probText").textContent = `${pct}%`;
+        ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - prob);
+
+        if (prob >= 0.7) {
+            ring.style.stroke = "var(--success)";
+            badge.style.background = "rgba(34, 197, 94, 0.15)";
+            badge.style.color = "var(--success)";
+            badge.textContent = "Alta probabilidad de cierre";
+            }           
+        else if (prob >= 0.4) {
+            ring.style.stroke = "var(--warn)";
+            badge.style.background = "rgba(245, 158, 11, 0.15)";
+            badge.style.color = "var(--warn)";
+            badge.textContent = "Probabilidad media de cierre";
+            }           
+        else {
+            ring.style.stroke = "#ef4444";
+            badge.style.background = "rgba(239, 68, 68, 0.15)";
+            badge.style.color = "#ef4444";
+            badge.textContent = "Baja probabilidad de cierre";
+            }           
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Calcular Probabilidad";
+      }
+    });
+  </script>
+</body>
+</html>

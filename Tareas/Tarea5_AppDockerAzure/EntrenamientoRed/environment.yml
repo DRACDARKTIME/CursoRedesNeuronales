@@ -1,0 +1,52 @@
+# Entorno de ENTRENAMIENTO (solo local). La app tiene su propio requirements.txt en ../mi-proyecto-azure
+#
+# Crear:  conda env create -f environment.yml
+# Usar:   conda activate house-tf
+#
+# NOTA 1: tensorflow[and-cuda] instala las librerias CUDA/CuDNN como paquetes pip
+#         (nvidia-*). TensorFlow NO las encuentra solo: hace falta tenerlas en
+#         LD_LIBRARY_PATH. Este entorno ya trae el script
+#         etc/conda/activate.d/tensorflow_cuda.sh que lo hace al activar.
+#         Si recreas el entorno en otra maquina, vuelve a crearlo:
+#             ver README_ENV.md
+#
+# NOTA 2: keras se fija a 3.3.3 porque tensorflow 2.16.1 declara keras>=3.0.0
+#         sin tope superior y pip instalaria una 3.15 incompatible.
+#
+# NOTA 3: mlflow se fija a 2.17.2. mlflow 3.x exige opentelemetry-proto, que
+#         exige protobuf>=5, y tensorflow 2.16.1 exige protobuf<5.
+#
+# NOTA 4: si `pip install` se queda colgado, es por el extra-index-url de
+#         pypi.ngc.nvidia.com en tu config global. Usa:
+#             PIP_CONFIG_FILE=/dev/null pip install ...
+
+name: house-tf
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11
+  - pip
+  # Jupyter
+  - jupyterlab
+  - ipykernel
+  # Analisis de datos / metricas
+  - pandas
+  - numpy<2          # tensorflow 2.16 no soporta numpy 2.x
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - joblib
+  - pip:
+      # Deep learning (GPU, CUDA 12.3 via wheels de pip)
+      - "tensorflow[and-cuda]==2.16.1"   # misma version base que la app (tensorflow-cpu==2.16.1)
+      - "keras==3.3.3"
+      - "protobuf==4.25.9"               # requerido por tensorflow 2.16
+      - keras-tuner
+      # Datos
+      - kagglehub
+      # Tracking de experimentos
+      - "mlflow==2.17.2"
+      - dagshub
+      - python-dotenv
